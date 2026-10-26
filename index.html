@@ -109,7 +109,6 @@ figure.embed figcaption {
   font-size: 0.88rem; color: var(--muted);
 }
 figcaption .kind { font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-right: 8px; }
-.open-figma { font-weight: 500; white-space: nowrap; }
 .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 28px; }
 
 /* Scenario transcript */
@@ -395,26 +394,10 @@ footer { padding-top: 64px; color: var(--muted); font-size: 0.9rem; }
 </main>
 
 <footer class="wrap">
-  <p>All mocks and prototypes are embedded live from the <a href="https://www.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk" target="_blank" rel="noopener">Agent Assist · OneDesk Figma file</a>.</p>
+  <p>All mocks and prototypes are embedded live from the Agent Assist · OneDesk Figma file.</p>
 </footer>
 
 <script>
-// Add an "Open in Figma" link under every embed, for viewers whose browser can't load it inline.
-(function () {
-  document.querySelectorAll("figure.embed").forEach(function (fig) {
-    var iframe = fig.querySelector("iframe");
-    var cap = fig.querySelector("figcaption");
-    var link = document.createElement("a");
-    link.className = "open-figma";
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = "Open in Figma ↗";
-    var update = function () { link.href = iframe.src.replace("embed.figma.com", "www.figma.com").replace(/&embed-host=share/, ""); };
-    update();
-    new MutationObserver(update).observe(iframe, { attributes: true, attributeFilter: ["src"] });
-    cap.appendChild(link);
-  });
-})();
 (function () {
   var base = "https://embed.figma.com/proto/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk";
   var frame = document.getElementById("flow-frame");
