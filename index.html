@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agent Assist in OneDesk</title>
+<meta name="description" content="Case study: designing an AI co-pilot panel that guides lodging agents through hotel cancellations inside the OneDesk console.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~68ch) for story, breaking out to a wide stage for each Figma embed. */
+:root {
+  --bg: #f6f8f9;
+  --surface: #ffffff;
+  --ink: #15212b;
+  --muted: #566573;
+  --line: #d9e1e6;
+  --accent: #0e7f74;        /* echoes the teal annotation lines in the Figma file */
+  --accent-soft: #e2f3f0;
+  --flag: #a55b00;
+  --flag-soft: #fdf1e1;
+  --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --read: 68ch;
+  --stage: 1240px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f161b; --surface: #172129; --ink: #e6edf1; --muted: #9aaab6; --line: #2a3843;
+    --accent: #4cc3b4; --accent-soft: #15302d; --flag: #f0b25e; --flag-soft: #33260f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f161b; --surface: #172129; --ink: #e6edf1; --muted: #9aaab6; --line: #2a3843;
+  --accent: #4cc3b4; --accent-soft: #15302d; --flag: #f0b25e; --flag-soft: #33260f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 17px/1.65 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 96px;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+.wrap { max-width: var(--read); margin-inline: auto; }
+.stage { max-width: var(--stage); margin-inline: auto; }
+
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.6rem, 3.4vw, 2.3rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.2rem; font-weight: 500; }
+p { margin: 0; }
+.label {
+  font: 500 0.75rem/1.2 var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent);
+}
+
+/* Hero */
+header.hero { padding-block: 72px 40px; display: grid; gap: 20px; }
+.hero .lede { font-size: 1.25rem; color: var(--muted); max-width: 58ch; }
+.facts {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px 24px; padding-top: 24px; border-top: 1px solid var(--line); margin-top: 8px;
+}
+.facts div { display: grid; gap: 4px; min-width: 0; }
+.facts dt { font: 500 0.72rem/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.facts dd { margin: 0; font-weight: 500; }
+
+.todo {
+  background: var(--flag-soft); color: var(--flag);
+  font: 500 0.8em/1.4 var(--font-mono); padding: 1px 6px; border-radius: 4px;
+}
+
+/* Table of contents */
+nav.toc { border-block: 1px solid var(--line); padding-block: 14px; margin-bottom: 24px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 0.92rem; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover { color: var(--accent); }
+nav.toc span { font-family: var(--font-mono); color: var(--accent); margin-right: 6px; }
+
+/* Sections */
+section.chapter { padding-block: 56px 8px; display: grid; gap: 28px; }
+.chapter .head { display: grid; gap: 10px; }
+.prose { display: grid; gap: 16px; }
+.prose ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+/* Figma embed figure */
+figure.embed { margin: 0; display: grid; gap: 10px; }
+.frame {
+  position: relative; width: 100%; max-width: 100%;
+  aspect-ratio: var(--ratio, 16 / 10);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+}
+.frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+figure.embed figcaption {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px;
+  font-size: 0.88rem; color: var(--muted);
+}
+figcaption .kind { font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-right: 8px; }
+.open-figma { font-weight: 500; white-space: nowrap; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 28px; }
+
+/* Scenario transcript */
+.transcript {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px 22px; display: grid; gap: 10px; font-size: 0.95rem;
+}
+.transcript p { display: grid; grid-template-columns: 7.5em 1fr; gap: 12px; }
+.transcript b { font: 500 0.75rem/1.9 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.transcript .agent b { color: var(--accent); }
+@media (max-width: 520px) { .transcript p { grid-template-columns: 1fr; gap: 0; } }
+
+/* Flow tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tabs button {
+  font: 500 0.9rem/1.2 var(--font-body); color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  padding: 9px 16px; cursor: pointer;
+}
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.flow-note { font-size: 0.95rem; color: var(--muted); max-width: var(--read); }
+
+/* Decision list */
+.decisions { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.decisions div { display: grid; grid-template-columns: minmax(0, 14em) minmax(0, 1fr); gap: 8px 24px; padding-block: 16px; border-bottom: 1px solid var(--line); }
+.decisions dt { font-weight: 600; }
+.decisions dd { margin: 0; color: var(--muted); }
+@media (max-width: 620px) { .decisions div { grid-template-columns: 1fr; } }
+
+.callout {
+  border-left: 3px solid var(--accent); background: var(--accent-soft);
+  padding: 16px 20px; border-radius: 0 8px 8px 0; display: grid; gap: 6px;
+}
+
+footer { padding-top: 64px; color: var(--muted); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<header class="hero wrap">
+  <p class="label">Case study · Expedia OneDesk · 2026</p>
+  <h1>Agent Assist in OneDesk</h1>
+  <p class="lede">An AI panel that listens to the conversation and gives lodging agents the next right step, so a stressful hotel cancellation takes one screen instead of five tabs and a policy lookup.</p>
+  <dl class="facts">
+    <div><dt>My role</dt><dd><span class="todo">Add your role</span></dd></div>
+    <div><dt>Team</dt><dd><span class="todo">PM, Eng, CX ops…</span></dd></div>
+    <div><dt>Timeline</dt><dd>Mar – Sep 2026</dd></div>
+    <div><dt>Platform</dt><dd>OneDesk (Salesforce console)</dd></div>
+  </dl>
+</header>
+
+<nav class="toc wrap" aria-label="Sections">
+  <ol>
+    <li><a href="#problem"><span>01</span>The problem</a></li>
+    <li><a href="#console"><span>02</span>Mapping the console</a></li>
+    <li><a href="#system"><span>03</span>A card system</a></li>
+    <li><a href="#flows"><span>04</span>Cancellation flows</a></li>
+    <li><a href="#details"><span>05</span>Trust and closure</a></li>
+    <li><a href="#preload"><span>06</span>Pre-loading</a></li>
+    <li><a href="#next"><span>07</span>What's next</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- 01 -->
+<section class="chapter" id="problem">
+  <div class="wrap head">
+    <p class="label">01 · The problem</p>
+    <h2>A cancellation inside the penalty window is where agents slow down</h2>
+  </div>
+  <div class="wrap prose">
+    <p>Lodging agents work in OneDesk, Expedia's Salesforce-based service console. A traveler on chat or voice asks to cancel a hotel. If the booking is already inside the penalty window, the agent has to confirm identity, find the itinerary, read the cancellation policy, explain the penalty, and often contact the property to ask for a waiver. All of this happens while they keep the conversation going.</p>
+    <p>Agent Assist sits in a fixed column on the right of the console. It listens to the conversation, detects intent, and posts <em>activity cards</em> to a feed: a handoff summary, property availability, a cancellation summary, and the action to take. The design question was how to make that feed something agents trust and act on, not one more panel to ignore.</p>
+  </div>
+  <div class="wrap">
+    <div class="transcript" aria-label="Design scenario used across the prototypes">
+      <p class="label" style="display:block;margin-bottom:4px">The scenario every prototype is built around</p>
+      <p><b>Traveler</b><span>The concert I was going to just got canceled, so I need to cancel my hotel booking.</span></p>
+      <p class="agent"><b>Agent</b><span>This booking is non-refundable. Cancelling it will not return the $500 already paid. Would you like to proceed?</span></p>
+      <p><b>Traveler</b><span>Yes, but can we see if I can get a refund?</span></p>
+      <p class="agent"><b>Agent</b><span>I can reach out to the property and request a waiver. Give me a moment.</span></p>
+      <p><b>Property</b><span>This reason does not qualify for a refund exception under our policy.</span></p>
+    </div>
+  </div>
+  <div class="wrap prose">
+    <p>The same request can end four ways: no waiver, the property cannot be reached, a waiver is approved, or a partial waiver is approved. Each ending needs the agent to see different information and take a different action.</p>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="chapter" id="console">
+  <div class="wrap head">
+    <p class="label">02 · Mapping the console</p>
+    <h2>Finding a home for AI in a screen that was already full</h2>
+  </div>
+  <div class="wrap prose">
+    <p>The first step was to understand the console as agents use it today. I worked from screenshots captured in an in-person working session in April, covering the contact page before a case is opened, after it is opened, and the case page itself. A translation tool, Language IO, already lived in the conversation area.</p>
+    <p>From there I split the contact page into three zones: an informational column on the left, an action zone in the center for the live conversation, verification and itinerary search, and a dedicated Agent Assist column on the right. The column keeps the same position, width and height on every page where Agent Assist is available, so agents always know where to look.</p>
+  </div>
+  <div class="stage pair">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 1437 / 1383">
+        <iframe loading="lazy" allowfullscreen title="Contact page layout zones" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=1062-66223&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Mock</span>Contact page layout: informational, action zone, Agent Assist</span></figcaption>
+    </figure>
+    <figure class="embed">
+      <div class="frame" style="--ratio: 1440 / 900">
+        <iframe loading="lazy" allowfullscreen title="OneDesk contact page" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=1069-95254&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Mock</span>The contact page with Agent Assist in place</span></figcaption>
+    </figure>
+  </div>
+  <div class="stage">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 16 / 8">
+        <iframe loading="lazy" allowfullscreen title="Screenshots from the April working session" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=410-80097&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Research</span>Annotated console screenshots from the 4/14 working session</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 03 -->
+<section class="chapter" id="system">
+  <div class="wrap head">
+    <p class="label">03 · A card system</p>
+    <h2>One container, one card anatomy, many card types</h2>
+  </div>
+  <div class="wrap prose">
+    <p>Rather than designing screens per scenario, I defined a small system the AI could compose. The container has a header and a feed, and new cards load into the feed as the conversation moves. Every card shares one anatomy: an icon and title, a body of label and value pairs, an optional call-out or action, a timestamp, and thumbs-up and thumbs-down feedback.</p>
+    <p>Card types fall into two families. <strong>Information</strong> cards cover the handoff summary, multiple bookings found, property information, policy summary, cancel booking and booking canceled. <strong>Responses</strong> are the suggested replies and actions an agent can send or trigger. Each type is documented with its content rules and its states.</p>
+  </div>
+  <div class="stage pair">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 835 / 1106">
+        <iframe loading="lazy" allowfullscreen title="Agent Assist container anatomy" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=966-67683&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Spec</span>Agent Assist container (MLP): header, feed, activity cards</span></figcaption>
+    </figure>
+    <figure class="embed">
+      <div class="frame" style="--ratio: 1705 / 900">
+        <iframe loading="lazy" allowfullscreen title="Activity card anatomy" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=966-66910&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Spec</span>Activity card anatomy</span></figcaption>
+    </figure>
+  </div>
+  <div class="stage pair">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 4 / 5">
+        <iframe loading="lazy" allowfullscreen title="Types of activity cards: Information" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=966-67024&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Spec</span>Information cards, with content rules and states</span></figcaption>
+    </figure>
+    <figure class="embed">
+      <div class="frame" style="--ratio: 4 / 5">
+        <iframe loading="lazy" allowfullscreen title="Types of activity cards: Responses" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=2554-26959&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Spec</span>Response cards</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 04 -->
+<section class="chapter" id="flows">
+  <div class="wrap head">
+    <p class="label">04 · Cancellation flows</p>
+    <h2>Four endings to the same request, each one clickable</h2>
+  </div>
+  <div class="wrap prose">
+    <p>I prototyped each ending end to end in the full console, from the chat handoff through verification to the closed case. The prototypes were the main artifact for reviews with product, operations and engineering. They let people feel the sequence of cards rather than judge them one at a time.</p>
+  </div>
+  <div class="stage" style="display:grid;gap:16px">
+    <div class="tabs" role="tablist" aria-label="Prototype flows">
+      <button role="tab" id="tab-1" aria-selected="true" data-node="1972-104735" data-note="The property declines the waiver. Agent Assist shows the penalty clearly so the agent can set expectations, then confirms the cancellation.">1 · No waiver</button>
+      <button role="tab" id="tab-2" aria-selected="false" data-node="1972-114796" data-note="The property can't be reached by phone. The property card offers a templated waiver-request email so the agent can follow up without leaving the console.">2 · Supplier unreachable</button>
+      <button role="tab" id="tab-3" aria-selected="false" data-node="1972-123289" data-note="The property approves a full or partial waiver. The cancel card switches to the 'with waiver' path and shows the refund the traveler will get.">3 · Waiver approved</button>
+      <button role="tab" id="tab-4" aria-selected="false" data-node="4396-128696" data-note="The complete waiver-approved flow, extended for the 7/13 review, from first message to case closure.">4 · Full waiver flow</button>
+    </div>
+    <figure class="embed">
+      <div class="frame" style="--ratio: 1440 / 960">
+        <iframe id="flow-frame" loading="lazy" allowfullscreen title="Prototype: Flow 1, cancel with penalty" src="https://embed.figma.com/proto/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=1972-104735&starting-point-node-id=1972-104735&scaling=scale-down-width&content-scaling=fixed&embed-host=share"></iframe>
+      </div>
+      <figcaption>
+        <span><span class="kind">Prototype</span><span id="flow-note">The property declines the waiver. Agent Assist shows the penalty clearly so the agent can set expectations, then confirms the cancellation.</span></span>
+      </figcaption>
+    </figure>
+  </div>
+  <div class="wrap prose">
+    <p>Each flow is also laid out as a storyboard so reviewers can scan every state at once and comment on a specific step.</p>
+  </div>
+  <div class="stage">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 16 / 9">
+        <iframe loading="lazy" allowfullscreen title="Storyboards for all four flows" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=1516-20434&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Storyboard</span>All four flows, frame by frame</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="chapter" id="details">
+  <div class="wrap head">
+    <p class="label">05 · Trust and closure</p>
+    <h2>Letting agents correct the AI, and close the loop</h2>
+  </div>
+  <div class="wrap prose">
+    <p>An assistant that agents can't push back on gets ignored. Every card carries a feedback control. A thumbs-down opens a short list of reasons (inaccurate information, took too long to load, wrong recommended action, other), with an optional comment. This gives the model team labeled signal tied to a specific card.</p>
+    <p>Closing the case was the other gap. A "Close case" action in the container header starts disposition. It shows a loading state while the AI agent works, then a closed-case card. When disposition fails, the agent gets an inline error and can finish manually.</p>
+  </div>
+  <div class="stage">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 3756 / 1743">
+        <iframe loading="lazy" allowfullscreen title="Feedback mechanism at the activity card level" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=2310-26450&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Mock</span>Feedback mechanism: states, thumbs-down reasons, follow-up comment</span></figcaption>
+    </figure>
+  </div>
+  <div class="stage">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 3894 / 1244">
+        <iframe loading="lazy" allowfullscreen title="Case disposition flow and error states" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=3107-92957&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Mock</span>Case disposition (6/22): happy path and error states</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 06 -->
+<section class="chapter" id="preload">
+  <div class="wrap head">
+    <p class="label">06 · Iteration</p>
+    <h2>Pre-loading the cards before the agent asks</h2>
+  </div>
+  <div class="wrap prose">
+    <p>In the first release, cards arrived one by one in response to the conversation. The feed grew long, and agents waited on each step. In September I proposed pre-loading: once cancel intent is identified, Agent Assist loads the cancellation summary, property information and the cancel action together as collapsed cards.</p>
+    <p>The plan had a best case and a fallback. In the best case, Agent Assist keeps listening and confirms intent on its own, so the agent never has to. If that wasn't feasible, a fast-follow adds a "Clarify intent with traveler" prompt so the agent confirms manually. The cancel action only shows its options after the cancellation type is chosen, because pre-loading happens before the system knows whether a waiver applies.</p>
+  </div>
+  <div class="stage">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 3207 / 2234">
+        <iframe loading="lazy" allowfullscreen title="Pre-load cancel cards: current vs proposed" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=5426-149069&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Mock</span>Current feed vs. proposed MLP vs. manual-intent fast follow</span></figcaption>
+    </figure>
+  </div>
+  <div class="wrap callout">
+    <p class="label">Open constraint</p>
+    <p>Intent verification takes about 20 seconds. The next round of work is a loading state that tells the agent the cards are coming, so the gap reads as progress instead of a stalled panel.</p>
+  </div>
+  <div class="stage pair">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 1974 / 1126">
+        <iframe loading="lazy" allowfullscreen title="Pre-load exploration" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=5915-1008&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Exploration</span>Pre-load states</span></figcaption>
+    </figure>
+    <figure class="embed">
+      <div class="frame" style="--ratio: 1769 / 1814">
+        <iframe loading="lazy" allowfullscreen title="Pre-load latest iteration" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=6221-207226&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Exploration</span>Latest iteration</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 07 -->
+<section class="chapter" id="next">
+  <div class="wrap head">
+    <p class="label">07 · Outcomes and what's next</p>
+    <h2>What shipped, what we learned</h2>
+  </div>
+  <div class="wrap">
+    <dl class="decisions">
+      <div><dt>Fixed column, consistent everywhere</dt><dd>Agents learn one location for AI help, and it never pushes the conversation around.</dd></div>
+      <div><dt>A system of cards, not screens</dt><dd>New intents reuse the same anatomy, so the AI team can add card types without new layouts.</dd></div>
+      <div><dt>Feedback on every card</dt><dd>Agent corrections become labeled data tied to one card and one moment.</dd></div>
+      <div><dt>Pre-load over pull</dt><dd>Loading the likely next steps together cuts the waiting between steps, as long as latency is designed for.</dd></div>
+    </dl>
+  </div>
+  <div class="wrap prose">
+    <p><span class="todo">Add impact: handle time, adoption, feedback rate, or qualitative quotes from agents.</span></p>
+    <p>Next, a "sidecar" exploration looks at how Agent Assist could move beyond the fixed column and travel with the agent across tabs.</p>
+  </div>
+  <div class="stage">
+    <figure class="embed">
+      <div class="frame" style="--ratio: 1196 / 856">
+        <iframe loading="lazy" allowfullscreen title="Sidecar exploration" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=6255-220202&embed-host=share"></iframe>
+      </div>
+      <figcaption><span><span class="kind">Exploration</span>Sidecar</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>All mocks and prototypes are embedded live from the <a href="https://www.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk" target="_blank" rel="noopener">Agent Assist · OneDesk Figma file</a>.</p>
+</footer>
+
+<script>
+// Add an "Open in Figma" link under every embed, for viewers whose browser can't load it inline.
+(function () {
+  document.querySelectorAll("figure.embed").forEach(function (fig) {
+    var iframe = fig.querySelector("iframe");
+    var cap = fig.querySelector("figcaption");
+    var link = document.createElement("a");
+    link.className = "open-figma";
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "Open in Figma ↗";
+    var update = function () { link.href = iframe.src.replace("embed.figma.com", "www.figma.com").replace(/&embed-host=share/, ""); };
+    update();
+    new MutationObserver(update).observe(iframe, { attributes: true, attributeFilter: ["src"] });
+    cap.appendChild(link);
+  });
+})();
+(function () {
+  var base = "https://embed.figma.com/proto/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk";
+  var frame = document.getElementById("flow-frame");
+  var note = document.getElementById("flow-note");
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      tabs.forEach(function (t) { t.setAttribute("aria-selected", String(t === tab)); });
+      var node = tab.dataset.node;
+      frame.src = base + "?node-id=" + node + "&starting-point-node-id=" + node +
+        "&scaling=scale-down-width&content-scaling=fixed&embed-host=share";
+      frame.title = "Prototype: " + tab.textContent;
+      note.textContent = tab.dataset.note;
+    });
+  });
+})();
+</script>
+</body>
+</html>
