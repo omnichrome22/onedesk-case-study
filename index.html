@@ -265,12 +265,12 @@ footer { padding-top: 64px; color: var(--muted); font-size: 0.9rem; }
     <p>An assistant that agents can't push back on gets ignored. Every card carries a feedback control. A thumbs-down opens a short list of reasons (inaccurate information, took too long to load, wrong recommended action, other), with an optional comment. This gives the model team labeled signal tied to a specific card.</p>
     <p>Closing the case was the other gap. A "Close case" action in the container header starts disposition. It shows a loading state while the AI agent works, then a closed-case card. When disposition fails, the agent gets an inline error and can finish manually.</p>
   </div>
-  <div class="stage">
-    <figure class="embed">
-      <div class="frame" style="--ratio: 3756 / 1743">
-        <iframe loading="lazy" allowfullscreen title="Feedback mechanism at the activity card level" src="https://embed.figma.com/design/qKVRdN96T56tUBetLRV2Ak/Agent-Assist_OneDesk?node-id=2310-26450&embed-host=share"></iframe>
+  <div class="wrap">
+    <figure class="embed card-still" style="max-width: 443px">
+      <div class="frame still">
+        <img src="images/feedback-thumbs-down.png" width="886" height="1166" loading="lazy" alt="Property availability card with the thumbs-down selected. A menu lists the reasons: inaccurate information shown, took too long to load, recommended action was incorrect, and other issue.">
       </div>
-      <figcaption><span><span class="kind">Mock</span>Feedback mechanism: states, thumbs-down reasons, follow-up comment</span></figcaption>
+      <figcaption><span><span class="kind">Mock</span>Feedback mechanism: thumbs-down reasons on an activity card</span></figcaption>
     </figure>
   </div>
   <div class="stage">
